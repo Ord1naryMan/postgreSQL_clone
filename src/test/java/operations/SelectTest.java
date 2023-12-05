@@ -10,9 +10,14 @@ import org.ord1naryman.postgresClone.operations.Insert;
 import org.ord1naryman.postgresClone.operations.Select;
 
 import java.io.IOException;
+import java.sql.Array;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class SelectTest {
 
@@ -58,6 +63,28 @@ public class SelectTest {
             .execute()
             .stream().map(o -> (TestData) o).toList();
         assertEquals(List.of(new TestData(1, "test1")), list);
+    }
+
+    @Test
+    void selectWithOrderUsingTest() {
+        genTestData().forEach(Insert.into(table)::value);
+
+        var comparator = Comparator.comparingInt((TestData o) -> o.id);
+
+        var actual = Select.from(table).orderUsingAndExecute(comparator);
+        var expected = new ArrayList<>(genTestData());
+        expected.sort(comparator);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void selectWithComparatorOfWrongTypeTest() {
+        genTestData().forEach(Insert.into(table)::value);
+
+        var comparator = Comparator.comparingInt((MoreTestData o) -> o.id);
+        assertThrows(IllegalArgumentException.class, () ->
+            Select.from(table).orderUsingAndExecute(comparator)
+        );
     }
 
     List<TestData> genTestData() {
