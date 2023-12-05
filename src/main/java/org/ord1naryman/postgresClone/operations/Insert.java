@@ -8,13 +8,16 @@ import java.io.ObjectInputStream;
 
 public class Insert {
 
+    private Insert() {
+    }
+
     public static InsertInto into(Table table) {
         return new InsertInto(table);
     }
 
     public static class InsertInto {
-        private Table table;
-        private InsertInto(Table table) {
+        private final Table<?> table;
+        private InsertInto(Table<?> table) {
             this.table = table;
         }
         public InsertInto value(Object value) {
@@ -24,6 +27,7 @@ public class Insert {
             }
             try {
                 table.objectOutputStream.writeObject(value);
+                table.objectOutputStream.flush();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

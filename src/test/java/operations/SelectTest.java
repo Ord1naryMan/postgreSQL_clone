@@ -3,16 +3,18 @@ package operations;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
 import org.ord1naryman.postgresClone.model.Database;
 import org.ord1naryman.postgresClone.model.Table;
 import org.ord1naryman.postgresClone.operations.Insert;
+import org.ord1naryman.postgresClone.operations.Select;
 
 import java.io.IOException;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
 
-public class InsertTests {
+public class SelectTest {
 
     Table<TestData> table;
 
@@ -26,22 +28,20 @@ public class InsertTests {
     void createTable() {
         table = new Database("test").createTable("test", TestData.class);
     }
-    @Test
-    void writeValueWithWrongType() {
-        try {
-            Insert.into(table).value(new TestData(1, "test1")).value(new MoreTestData());
-        } catch (IllegalArgumentException e) {
-            return;
-        }
-        fail();
-    }
 
     @Test
-    void insertValue() throws IOException, ClassNotFoundException {
-        var data = new TestData(1, "test");
-        Insert.into(table).value(data);
-        TestData retrievedData = (TestData) table.objectInputStream.readObject();
-        assertEquals(data.id, retrievedData.id);
-        assertEquals(data.name, retrievedData.name);
+    void selectAllTest() {
+        genTestData().forEach(Insert.into(table)::value);
+        List<TestData> list = Select.from(table).execute()
+            .stream().map(o -> (TestData) o).toList();
+        assertEquals(genTestData(), list);
+    }
+
+    List<TestData> genTestData() {
+        return List.of(
+            new TestData(1, "test1"),
+            new TestData(2, "test2"),
+            new TestData(3, "test3")
+        );
     }
 }
