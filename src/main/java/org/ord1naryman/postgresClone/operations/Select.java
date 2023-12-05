@@ -24,9 +24,11 @@ public class Select {
         private final Table<?> table;
         private final Map<String, Object> whereConditions;
         private Comparator<? super Object> activeComparator;
+        private List<SelectFrom> unionQueue;
         private SelectFrom(Table<?> table) {
             this.table = table;
             whereConditions = new HashMap<>();
+            unionQueue = new ArrayList<>();
         }
 
         public <T> SelectFrom where(String fieldName, T value) {
@@ -53,6 +55,9 @@ public class Select {
                 }
             } catch (EOFException e) {
                 //objectInputStream doesn't have EOF flag :(
+                if (!unionQueue.isEmpty()) {
+                    return executeUnions(returnList);
+                }
                 return returnList;
             } catch (IOException | ClassNotFoundException e) {
                 throw new RuntimeException(e);
@@ -65,6 +70,14 @@ public class Select {
             } catch (ClassCastException e) {
                 throw new IllegalArgumentException("comparator must compare the same type as table");
             }
+        }
+
+        public SelectFrom union(SelectFrom selectFrom) {
+            if (!selectFrom.table.getContainedType().equals(table.getContainedType())) {
+                throw new IllegalArgumentException("union must be used on selections with same output type");
+            }
+            unionQueue.add(selectFrom);
+            return this;
         }
 
         private boolean isValidObject(Object o) {
@@ -82,6 +95,14 @@ public class Select {
                 throw new RuntimeException(e);
             }
             return true;
+        }
+
+        private List<Object> executeUnions(List<Object> currentList) {
+            List<Object> list = new ArrayList<>(currentList);
+            for (var select : unionQueue) {
+                list.addAll(select.execute());
+            }
+            return list;
         }
     }
 }
