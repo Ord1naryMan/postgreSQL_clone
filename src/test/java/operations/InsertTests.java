@@ -9,6 +9,7 @@ import org.ord1naryman.postgresClone.operations.Insert;
 
 import java.io.IOException;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class InsertTests {
@@ -33,5 +34,16 @@ public class InsertTests {
             return;
         }
         fail();
+    }
+
+    @Test
+    void insertValue() throws IOException, ClassNotFoundException {
+        var data = new TestData();
+        data.name = "test";
+        data.id = 1;
+        Insert.into(table).value(data);
+        TestData retrievedData = (TestData) table.objectInputStream.readObject();
+        assertEquals(data.id, retrievedData.id);
+        assertEquals(data.name, retrievedData.name);
     }
 }
