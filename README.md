@@ -8,10 +8,10 @@ SQL commands recreated with use of java classes
 - create (database / table)
 - insert data into table
 - select ('where' is supported)
+- order by (more like orderUsing(Comparator))
 
 # In progress
 - join
-- order by (more like orderUsing(Comparator))
 - group by
 - union
 
