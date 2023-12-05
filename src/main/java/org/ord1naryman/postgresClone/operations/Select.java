@@ -6,6 +6,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,7 @@ public class Select {
     public static class SelectFrom {
         private final Table<?> table;
         private final Map<String, Object> whereConditions;
+        private Comparator<? super Object> activeComparator;
         private SelectFrom(Table<?> table) {
             this.table = table;
             whereConditions = new HashMap<>();
@@ -54,6 +56,14 @@ public class Select {
                 return returnList;
             } catch (IOException | ClassNotFoundException e) {
                 throw new RuntimeException(e);
+            }
+        }
+
+        public <T> List<T> orderUsingAndExecute(Comparator<T> comparator) {
+            try {
+                return execute().stream().map(o -> (T) o).sorted(comparator).toList();
+            } catch (ClassCastException e) {
+                throw new IllegalArgumentException("comparator must compare the same type as table");
             }
         }
 
