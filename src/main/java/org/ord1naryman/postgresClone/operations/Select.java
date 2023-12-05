@@ -2,6 +2,7 @@ package org.ord1naryman.postgresClone.operations;
 
 import org.ord1naryman.postgresClone.model.Table;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -42,16 +43,18 @@ public class Select {
         public List<Object> execute() {
             List<Object> returnList = new ArrayList<>();
             try {
-                while (table.objectInputStream.() > 0) {
+                while (true) {
                     Object object = table.objectInputStream.readObject();
                     if (isValidObject(object)) {
                         returnList.add(object);
                     }
                 }
+            } catch (EOFException e) {
+                //objectInputStream doesn't have EOF flag :(
+                return returnList;
             } catch (IOException | ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
-            return returnList;
         }
 
         private boolean isValidObject(Object o) {
