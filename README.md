@@ -1,5 +1,6 @@
 # PostgreSQL clone
 This repo was made in educational purposes.
+This is more adaptation than clone.
 
 # Features
 SQL commands recreated with use of java classes
