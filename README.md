@@ -11,7 +11,7 @@ SQL commands recreated with use of java classes
 
 # In progress
 - join
-- order by
+- order by (more like orderUsing(Comparator))
 - group by
 - union
 
