@@ -37,11 +37,35 @@ public class SelectTest {
         assertEquals(genTestData(), list);
     }
 
+    @Test
+    void selectWithSingleWhereTest() {
+        genTestData().forEach(Insert.into(table)::value);
+        List<TestData> list = Select.from(table)
+            .where("id", 1)
+            .execute()
+            .stream().map(o -> (TestData) o).toList();
+        var expected = List.of(new TestData(1, "test1"),
+            new TestData(1, "test4"));
+        assertEquals(expected, list);
+    }
+
+    @Test
+    void selectWithMultipleWhereTest() {
+        genTestData().forEach(Insert.into(table)::value);
+        List<TestData> list = Select.from(table)
+            .where("id", 1)
+            .where("name", "test1")
+            .execute()
+            .stream().map(o -> (TestData) o).toList();
+        assertEquals(List.of(new TestData(1, "test1")), list);
+    }
+
     List<TestData> genTestData() {
         return List.of(
             new TestData(1, "test1"),
             new TestData(2, "test2"),
-            new TestData(3, "test3")
+            new TestData(3, "test3"),
+            new TestData(1, "test4")
         );
     }
 }
