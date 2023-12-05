@@ -13,6 +13,7 @@ import java.io.Serializable;
 import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -34,12 +35,9 @@ public class CreateTests {
     @Test
     void createTableTest() {
         assertTrue(new File("data/test.test").exists());
-        try {
-            new Database("test").createTable("test1", TestDataNotSerializable.class);
-        } catch (IllegalArgumentException e) {
-            return;
-        }
-        fail();
+        assertThrows(IllegalArgumentException.class, () ->
+            new Database("test").createTable("test1", TestDataNotSerializable.class)
+        );
     }
 
     @Test
@@ -54,25 +52,17 @@ public class CreateTests {
     @Test
     void openTableWithWrongDataType() {
         //keep in mind table "test.test" has already been created look at (before each)
-        try {
-            new Database("test").createTable("test", MoreTestData.class);
-        } catch(IllegalArgumentException e) {
-            Logger.getAnonymousLogger().info(e.getMessage());
-            return;
-        }
-        fail();
+        assertThrows(IllegalArgumentException.class, () ->
+            new Database("test").createTable("test", MoreTestData.class)
+        );
     }
 
     @Test
     void openCachedTableWithWrongContainedDataType() throws IOException {
         Insert.into(table).value(new TestData());
-        try {
-            new Database("test").createTable("test", MoreTestData.class);
-        } catch (IllegalArgumentException e) {
-            Logger.getAnonymousLogger().info(e.getMessage());
-            return;
-        }
-        fail();
+        assertThrows(IllegalArgumentException.class, () ->
+            new Database("test").createTable("test", MoreTestData.class)
+        );
     }
 }
 
@@ -81,7 +71,7 @@ class TestData implements Serializable {
     public String name;
 }
 
-class TestDataNotSerializable{
+class TestDataNotSerializable {
     public String name;
 }
 

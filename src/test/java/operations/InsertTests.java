@@ -10,6 +10,7 @@ import org.ord1naryman.postgresClone.operations.Insert;
 import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class InsertTests {
@@ -28,12 +29,9 @@ public class InsertTests {
     }
     @Test
     void writeValueWithWrongType() {
-        try {
-            Insert.into(table).value(new TestData(1, "test1")).value(new MoreTestData());
-        } catch (IllegalArgumentException e) {
-            return;
-        }
-        fail();
+        assertThrows(IllegalArgumentException.class, () ->
+            Insert.into(table).value(new TestData(1, "test1")).value(new MoreTestData())
+        );
     }
 
     @Test
