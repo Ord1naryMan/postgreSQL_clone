@@ -3,21 +3,18 @@ package operations;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestTemplate;
 import org.ord1naryman.postgresClone.model.Database;
 import org.ord1naryman.postgresClone.model.Table;
 import org.ord1naryman.postgresClone.operations.Insert;
 import org.ord1naryman.postgresClone.operations.Select;
 
 import java.io.IOException;
-import java.sql.Array;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
 
 public class SelectTest {
 
@@ -85,6 +82,44 @@ public class SelectTest {
         assertThrows(IllegalArgumentException.class, () ->
             Select.from(table).orderUsingAndExecute(comparator)
         );
+    }
+
+    @Test
+    void selectWithUnionTest() {
+        genTestData().forEach(Insert.into(table)::value);
+
+        var t1 = new Database("test").createTable("test1", TestData.class);
+        genTestData().forEach(Insert.into(t1)::value);
+
+        List<TestData> actual = Select.from(table).union(Select.from(t1))
+            .execute().stream().map(o -> (TestData) o).toList();
+
+        assertEquals(8, actual.size());
+
+        var expected = new ArrayList<TestData>() {{
+            addAll(genTestData());
+            addAll(genTestData());
+        }};
+
+        assertEquals(expected, actual);
+
+        t1.close();
+        t1.getFile().delete();
+    }
+
+    @Test
+    void selectWithUnionWrongTypeTest() {
+        genTestData().forEach(Insert.into(table)::value);
+
+        var t1 = new Database("test").createTable("test1", MoreTestData.class);
+
+        assertThrows(IllegalArgumentException.class, () ->
+            Select.from(table).union(Select.from(t1)).execute()
+        );
+
+
+        t1.close();
+        t1.getFile().delete();
     }
 
     List<TestData> genTestData() {
