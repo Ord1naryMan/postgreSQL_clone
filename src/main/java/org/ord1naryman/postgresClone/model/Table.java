@@ -40,7 +40,7 @@ public class Table<T> {
             objectOutputStream = new ObjectOutputStream(new FileOutputStream(file));
             objectInputStream = new ObjectInputStream(new FileInputStream(file));
             if (file.getTotalSpace() > 0) {
-                if (!areConsistent(objectInputStream)) {
+                if (!isFileConsistentWithTable(objectInputStream)) {
                     throw new RuntimeException("table content doesn't match provided class");
                 }
             }
@@ -56,7 +56,7 @@ public class Table<T> {
         return file;
     }
 
-    private boolean areConsistent(ObjectInputStream ois) throws ClassNotFoundException, IOException {
+    private boolean isFileConsistentWithTable(ObjectInputStream ois) throws ClassNotFoundException, IOException {
         if (ois.available() <= 0) {
             return true;
         }
