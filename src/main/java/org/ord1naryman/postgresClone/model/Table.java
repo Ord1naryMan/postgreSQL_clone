@@ -52,6 +52,7 @@ public class Table<T> {
     public Class<T> getContainedType() {
         return containedType;
     }
+
     public File getFile() {
         return file;
     }
@@ -64,9 +65,13 @@ public class Table<T> {
         return containedType.isAssignableFrom(o.getClass());
     }
 
-    public void close() throws IOException {
-        objectOutputStream.close();
-        objectInputStream.close();
-        ConnectionPool.openConnections.remove(databaseName + "." + tableName);
+    public void close() {
+        try {
+            objectOutputStream.close();
+            objectInputStream.close();
+            ConnectionPool.openConnections.remove(databaseName + "." + tableName);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
