@@ -23,3 +23,7 @@ There is only one concurrent connection to each table,
 that means that concurrency isn't supported, and 
 after opening connection equality of stored data type and data type used 
 to open connection is checked.
+
+# Test coverage
+<div style="color: greenyellow">100% method coverage</div>
+<div style="color: yellow">78% line coverage</div>
