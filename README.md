@@ -9,11 +9,11 @@ SQL commands recreated with use of java classes
 - insert data into table
 - select ('where' is supported)
 - order by (more like orderUsing(Comparator))
+- union
 
 # In progress
 - join
 - group by
-- union
 
 # Data storage
 Every table is stored in 'data' folder in root directory. 
