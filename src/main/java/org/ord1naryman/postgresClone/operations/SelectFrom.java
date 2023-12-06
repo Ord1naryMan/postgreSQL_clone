@@ -59,6 +59,10 @@ public class SelectFrom {
             return this;
         }
 
+        public Join join(SelectFrom selectFrom) {
+            return new Join(execute(), selectFrom.execute());
+        }
+
         private boolean isValidStructure(Map<String, Object> structure) {
             for (var entry : whereConditions.entrySet()) {
                 if (!entry.getValue().equals(structure.get(entry.getKey()))) {
