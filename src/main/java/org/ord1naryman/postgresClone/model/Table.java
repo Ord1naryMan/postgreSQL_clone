@@ -1,75 +1,95 @@
 package org.ord1naryman.postgresClone.model;
 
 import org.ord1naryman.postgresClone.core.ConnectionPool;
+import org.ord1naryman.postgresClone.utlis.AppendingObjectOutputStream;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
-public class Table<T> {
+public class Table {
 
     private final String databaseName;
-    private String tableName;
+    private final String tableName;
 
     private File file;
-    private final Class<T> containedType;
-    public ObjectInputStream objectInputStream;
-    public ObjectOutputStream objectOutputStream;
-    private Logger log = Logger.getLogger("Table");
+    private Map<String, Class<?>> structure;
 
-    Table(String databaseName, String tableName, Class<T> clazz) {
+    private AppendingObjectOutputStream objectOutputStream;
+    private ObjectInputStream objectInputStream;
+
+    Table(String databaseName, String tableName, File file) {
         this.databaseName = databaseName;
         this.tableName = tableName;
-        containedType = clazz;
+        this.file = file;
 
-        file = new File("data/" + databaseName + "." + tableName);
 
         try {
-            if (file.exists()) {
-                log.warning("table was not created, table with name " +
-                    file.getName() + " already exists");
-            } else {
-                if (!file.createNewFile()) {
-                    throw new IllegalArgumentException("file was not created");
-                }
-            }
-            objectOutputStream = new ObjectOutputStream(new FileOutputStream(file));
-            objectInputStream = new ObjectInputStream(new FileInputStream(file));
-            if (file.getTotalSpace() > 0) {
-                if (!isFileConsistentWithTable(objectInputStream)) {
-                    throw new RuntimeException("table content doesn't match provided class");
-                }
-            }
+            objectOutputStream = new AppendingObjectOutputStream(new FileOutputStream(file, true));
+            getObjectInputStream();
+            structure = (Map<String, Class<?>>) objectInputStream.readObject();
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public Class<T> getContainedType() {
-        return containedType;
+    Table(String databaseName, String tableName, File file, Map<String, Class<?>> structure) {
+        this.databaseName = databaseName;
+        this.tableName = tableName;
+        this.structure = structure;
+        this.file = file;
+
+        try {
+            var tempOOS = new ObjectOutputStream(new FileOutputStream(file));
+            tempOOS.writeObject(structure);
+            tempOOS.close();
+            objectOutputStream = new AppendingObjectOutputStream(new FileOutputStream(file, true));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Map<String, Class<?>> getStructure() {
+        return structure;
     }
 
     public File getFile() {
         return file;
     }
 
-    private boolean isFileConsistentWithTable(ObjectInputStream ois) throws ClassNotFoundException, IOException {
-        if (ois.available() <= 0) {
-            return true;
-        }
-        Object o = ois.readObject();
-        return containedType.isAssignableFrom(o.getClass());
+    public void close() {
+        closeStreams();
+        ConnectionPool.openConnections.remove(databaseName + "." + tableName);
     }
 
-    public void close() {
+    public ObjectOutputStream getObjectOutputStream() {
+        return objectOutputStream;
+    }
+
+    public ObjectInputStream getObjectInputStream() {
         try {
-            objectOutputStream.close();
-            objectInputStream.close();
-            ConnectionPool.openConnections.remove(databaseName + "." + tableName);
+            objectInputStream = new ObjectInputStream(new FileInputStream(file));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return objectInputStream;
+    }
+
+    private void closeStreams() {
+        try {
+            if (objectInputStream != null) {
+                objectInputStream.close();
+            }
+            if (objectOutputStream != null) {
+                objectOutputStream.close();
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -5,6 +5,8 @@ import org.ord1naryman.postgresClone.model.Table;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Insert {
 
@@ -16,18 +18,33 @@ public class Insert {
     }
 
     public static class InsertInto {
-        private final Table<?> table;
-        private InsertInto(Table<?> table) {
+        private final Table table;
+        private InsertInto(Table table) {
             this.table = table;
         }
-        public InsertInto value(Object value) {
-            if (!value.getClass().equals(table.getContainedType())) {
-                throw new IllegalArgumentException("value must be the same class " +
-                    "as table's content");
+
+        /**
+         *
+         * @param values - map to insert to table, all values that doesn't
+         *              exist in table would be ignored
+         */
+        public InsertInto value(Map<String, Object> values) {
+            Map<String, Object> toInsert = new HashMap<>();
+            for (var entry : table.getStructure().entrySet()) {
+                if (!values.containsKey(entry.getKey())) {
+                    throw new IllegalArgumentException("passed map isn't consistent with table");
+                }
+                Object value = values.get(entry.getKey());
+                Class<?> expectedType = table.getStructure().get(entry.getKey());
+                if (!value.getClass().isAssignableFrom(expectedType)) {
+                    throw new IllegalArgumentException("passed key-value pair must be the same as table's content");
+                }
+                toInsert.put(entry.getKey(), values.get(entry.getKey()));
             }
             try {
-                table.objectOutputStream.writeObject(value);
-                table.objectOutputStream.flush();
+                var tableOOS = table.getObjectOutputStream();
+                tableOOS.writeObject(toInsert);
+                tableOOS.flush();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

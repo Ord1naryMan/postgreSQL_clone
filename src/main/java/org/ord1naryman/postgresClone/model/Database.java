@@ -2,7 +2,10 @@ package org.ord1naryman.postgresClone.model;
 
 import org.ord1naryman.postgresClone.core.ConnectionPool;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
+import java.util.Map;
 
 public class Database {
 
@@ -12,19 +15,39 @@ public class Database {
         this.name = name;
     }
 
-    public <T> Table<T> createTable(String name, Class<T> containedType) {
-        if (!Serializable.class.isAssignableFrom(containedType)) {
-            throw new IllegalArgumentException("passed class should implement Serializable");
-        }
+    public Table openTable(String name) {
         if (ConnectionPool.openConnections.containsKey(this.name + "." + name)) {
-            Table<?> table = ConnectionPool.openConnections
+            return ConnectionPool.openConnections
                 .get(this.name + "." + name);
-            if (!containedType.equals(table.getContainedType())) {
-                throw new IllegalArgumentException("passed class isn't the same as table's class");
-            }
-            return (Table<T>) table;
         }
-        Table<T> newTable = new Table<T>(this.name, name, containedType);
+
+        File file = new File("data/" + this.name + "." + name);
+        if (!file.exists()) {
+            throw new IllegalArgumentException("Current table doesn't exists, please provide table structure");
+        }
+
+        var newTable = new Table(this.name, name, file);
+        ConnectionPool.openConnections.put(this.name + "." + name, newTable);
+        return newTable;
+
+    }
+
+    public Table createTable(String name, Map<String, Class<?>> structure) {
+        if (ConnectionPool.openConnections.containsKey(this.name + "." + name)) {
+            throw new IllegalArgumentException("table already exists, please use openTable method");
+        }
+        File file = new File("data/" + this.name + "." + name);
+
+        if (file.exists()) {
+            throw new IllegalArgumentException("table already exists, please use openTable method");
+        }
+        try {
+            file.createNewFile();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        Table newTable = new Table(this.name, name, file, structure);
         ConnectionPool.openConnections.put(this.name + "." + name, newTable);
         return newTable;
     }

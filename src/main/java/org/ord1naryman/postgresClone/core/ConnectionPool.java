@@ -8,6 +8,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ConnectionPool {
-    public static Map<String ,Table<?>> openConnections = new HashMap<>();
+    public static Map<String ,Table> openConnections = new HashMap<>();
 }
 
