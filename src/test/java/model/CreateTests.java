@@ -30,8 +30,7 @@ public class CreateTests {
 
     @AfterEach
     void deleteTestTable() {
-        table.close();
-        table.getFile().delete();
+        table.deleteFile();
     }
 
     @BeforeEach
@@ -57,8 +56,7 @@ public class CreateTests {
         } catch (Exception e) {
             fail(e.getMessage());
         } finally {
-            t.close();
-            t.getFile().delete();
+            t.deleteFile();
         }
         assertThrows(IllegalArgumentException.class,
             () -> new Database("test").openTable("non-existent-table"));
@@ -68,6 +66,6 @@ public class CreateTests {
     void openTableFromCache() {
         var t2 = new Database("test").openTable("test");
         assertEquals(table, t2);
-        t2.close();
+        t2.deleteFile();
     }
 }

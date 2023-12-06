@@ -37,8 +37,7 @@ public class SelectTest {
 
     @AfterEach
     void deleteTestTable() {
-        table.close();
-        table.getFile().delete();
+        table.deleteFile();
     }
 
     @BeforeEach
@@ -96,8 +95,7 @@ public class SelectTest {
 
         assertEquals(expected, actual);
 
-        t1.close();
-        t1.getFile().delete();
+        t1.deleteFile();
     }
 
     @Test
@@ -111,8 +109,7 @@ public class SelectTest {
         );
 
 
-        t1.close();
-        t1.getFile().delete();
+        t1.deleteFile();
     }
 
     List<Map<String, Object>> genTestData() {
