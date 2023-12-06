@@ -19,8 +19,8 @@ public class Table {
     private final String databaseName;
     private final String tableName;
 
-    private File file;
-    private Map<String, Class<?>> structure;
+    private final File file;
+    private final Map<String, Class<?>> structure;
 
     private AppendingObjectOutputStream objectOutputStream;
     private ObjectInputStream objectInputStream;
@@ -91,6 +91,26 @@ public class Table {
                 objectOutputStream.close();
             }
         } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void deleteFile() {
+        close();
+        try {
+            if (!file.delete()) {
+                if (file.exists()) {
+                    for (int i = 0; i < 6; i++) {
+                        Thread.sleep(500);
+                        //it really helps, looks like some object which is unused,
+                        // use this file somehow, it may be old table object
+                        System.gc();
+                        if (file.delete())
+                            break;
+                    }
+                }
+            }
+        } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
