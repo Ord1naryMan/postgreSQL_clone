@@ -10,9 +10,9 @@ SQL commands recreated with use of java classes
 - select ('where' is supported)
 - order by (more like orderUsing(Comparator))
 - union
+- join
 
 # In progress
-- join
 - group by
 
 # Data storage
