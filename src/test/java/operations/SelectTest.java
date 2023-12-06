@@ -11,92 +11,85 @@ import org.ord1naryman.postgresClone.operations.Select;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SelectTest {
 
-    Table<TestData> table;
+    Table table;
+
+    Map<String, Class<?>> testStructure = new HashMap<>(
+        Map.of(
+            "id", Integer.class,
+            "name", String.class
+        )
+    );
+
+    Map<String, Class<?>> secondTestStructure = new HashMap<>(
+        Map.of(
+            "id", Integer.class
+        )
+    );
 
     @AfterEach
-    void deleteTestTable() throws IOException {
+    void deleteTestTable() {
         table.close();
         table.getFile().delete();
     }
 
     @BeforeEach
     void createTable() {
-        table = new Database("test").createTable("test", TestData.class);
+        table = new Database("test").createTable("test", testStructure);
     }
 
     @Test
     void selectAllTest() {
         genTestData().forEach(Insert.into(table)::value);
-        List<TestData> list = Select.from(table).execute()
-            .stream().map(o -> (TestData) o).toList();
+        List<Map<String, Object>> list = Select.from(table).execute();
         assertEquals(genTestData(), list);
     }
 
     @Test
     void selectWithSingleWhereTest() {
         genTestData().forEach(Insert.into(table)::value);
-        List<TestData> list = Select.from(table)
+        List<Map<String, Object>> list = Select.from(table)
             .where("id", 1)
-            .execute()
-            .stream().map(o -> (TestData) o).toList();
-        var expected = List.of(new TestData(1, "test1"),
-            new TestData(1, "test4"));
+            .execute();
+        var expected = List.of(
+            Map.of("id", 1, "name", "test1"),
+            Map.of("id", 1, "name", "test4")
+        );
         assertEquals(expected, list);
     }
 
     @Test
     void selectWithMultipleWhereTest() {
         genTestData().forEach(Insert.into(table)::value);
-        List<TestData> list = Select.from(table)
+        List<Map<String, Object>> list = Select.from(table)
             .where("id", 1)
             .where("name", "test1")
-            .execute()
-            .stream().map(o -> (TestData) o).toList();
-        assertEquals(List.of(new TestData(1, "test1")), list);
-    }
-
-    @Test
-    void selectWithOrderUsingTest() {
-        genTestData().forEach(Insert.into(table)::value);
-
-        var comparator = Comparator.comparingInt((TestData o) -> o.id);
-
-        var actual = Select.from(table).orderUsingAndExecute(comparator);
-        var expected = new ArrayList<>(genTestData());
-        expected.sort(comparator);
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    void selectWithComparatorOfWrongTypeTest() {
-        genTestData().forEach(Insert.into(table)::value);
-
-        var comparator = Comparator.comparingInt((MoreTestData o) -> o.id);
-        assertThrows(IllegalArgumentException.class, () ->
-            Select.from(table).orderUsingAndExecute(comparator)
-        );
+            .execute();
+        assertEquals(List.of(Map.of("id", 1, "name", "test1")), list);
     }
 
     @Test
     void selectWithUnionTest() {
         genTestData().forEach(Insert.into(table)::value);
 
-        var t1 = new Database("test").createTable("test1", TestData.class);
+        var t1 = new Database("test").createTable("test1", testStructure);
         genTestData().forEach(Insert.into(t1)::value);
 
-        List<TestData> actual = Select.from(table).union(Select.from(t1))
-            .execute().stream().map(o -> (TestData) o).toList();
+        List<Map<String, Object>> actual = Select.from(table)
+            .union(Select.from(t1))
+            .execute();
 
         assertEquals(8, actual.size());
 
-        var expected = new ArrayList<TestData>() {{
+        var expected = new ArrayList<Map<String, Object>>() {{
             addAll(genTestData());
             addAll(genTestData());
         }};
@@ -111,7 +104,7 @@ public class SelectTest {
     void selectWithUnionWrongTypeTest() {
         genTestData().forEach(Insert.into(table)::value);
 
-        var t1 = new Database("test").createTable("test1", MoreTestData.class);
+        var t1 = new Database("test").createTable("test1", secondTestStructure);
 
         assertThrows(IllegalArgumentException.class, () ->
             Select.from(table).union(Select.from(t1)).execute()
@@ -122,12 +115,12 @@ public class SelectTest {
         t1.getFile().delete();
     }
 
-    List<TestData> genTestData() {
+    List<Map<String, Object>> genTestData() {
         return List.of(
-            new TestData(1, "test1"),
-            new TestData(2, "test2"),
-            new TestData(3, "test3"),
-            new TestData(1, "test4")
+            Map.of("id", 1, "name", "test1"),
+            Map.of("id", 2, "name", "test2"),
+            Map.of("id", 3, "name", "test3"),
+            Map.of("id", 1, "name", "test4")
         );
     }
 }
