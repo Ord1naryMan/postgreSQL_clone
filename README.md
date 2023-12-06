@@ -26,4 +26,4 @@ to open connection is checked.
 
 # Test coverage
 <div style="color: greenyellow">100% method coverage</div>
-<div style="color: yellow">78% line coverage</div>
+<div style="color: yellow">86% line coverage</div>
