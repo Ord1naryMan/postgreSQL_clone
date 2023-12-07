@@ -1,6 +1,7 @@
 package org.ord1naryman.postgresClone.operations;
 
 import org.ord1naryman.postgresClone.model.Table;
+import org.ord1naryman.postgresClone.utlis.Pair;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -15,13 +16,15 @@ import java.util.concurrent.atomic.AtomicLong;
 public class SelectFrom {
     private final Table table;
     private final Map<String, Object> whereConditions;
-    private List<SelectFrom> unionQueue;
+    private final Map<String, Pair<Object, Object>> whereBetweenConditions;
+    private final List<SelectFrom> unionQueue;
     private String fieldToGroupBy;
     private String orderByField;
 
     SelectFrom(Table table) {
         this.table = table;
         whereConditions = new HashMap<>();
+        whereBetweenConditions = new HashMap<>();
         unionQueue = new ArrayList<>();
     }
 
@@ -30,6 +33,22 @@ public class SelectFrom {
             throw new RuntimeException("value type must be the same as field type");
         }
         whereConditions.put(fieldName, value);
+        return this;
+    }
+
+    public SelectFrom whereBetween(String fieldName, Object left, Object right) {
+        if (!table.getStructure().containsKey(fieldName)) {
+            throw new IllegalArgumentException("such field doesn't exist, field name: " + fieldName);
+        }
+        if (!table.getStructure().get(fieldName).isAssignableFrom(left.getClass()) ||
+            !table.getStructure().get(fieldName).isAssignableFrom(right.getClass())) {
+            throw new RuntimeException("value type must be the same as field type");
+        }
+        if (!Comparable.class.isAssignableFrom(left.getClass()) ||
+            !Comparable.class.isAssignableFrom(right.getClass())) {
+            throw new IllegalArgumentException("passed arguments to whereBetween should implement Comparable");
+        }
+        whereBetweenConditions.put(fieldName, new Pair<>(left, right));
         return this;
     }
 
@@ -143,6 +162,15 @@ public class SelectFrom {
     private boolean isValidStructure(Map<String, Object> structure) {
         for (var entry : whereConditions.entrySet()) {
             if (!entry.getValue().equals(structure.get(entry.getKey()))) {
+                return false;
+            }
+        }
+        for (var entry : whereBetweenConditions.entrySet()) {
+            var valueFromStructure = (Comparable) structure
+                .get(entry.getKey());
+
+            if (valueFromStructure.compareTo(entry.getValue().first) < 0 ||
+            valueFromStructure.compareTo(entry.getValue().second) > 0) {
                 return false;
             }
         }
