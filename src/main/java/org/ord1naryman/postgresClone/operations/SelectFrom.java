@@ -7,14 +7,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class SelectFrom {
         private final Table table;
         private final Map<String, Object> whereConditions;
-        private Comparator<? super Object> activeComparator;
         private List<SelectFrom> unionQueue;
+        private String fieldToGroupBy;
         SelectFrom(Table table) {
             this.table = table;
             whereConditions = new HashMap<>();
@@ -26,6 +28,16 @@ public class SelectFrom {
                 throw new RuntimeException("value type must be the same as field type");
             }
             whereConditions.put(fieldName, value);
+            return this;
+        }
+
+    /**
+     *
+     * @param fieldName - sets the groupBy field,
+     *                 every call to this function rewrites field to groupBy
+     */
+    public SelectFrom groupBy(String fieldName) {
+            fieldToGroupBy = fieldName;
             return this;
         }
 
@@ -43,7 +55,11 @@ public class SelectFrom {
             } catch (EOFException e) {
                 //objectInputStream doesn't have EOF flag :(
                 if (!unionQueue.isEmpty()) {
-                    return executeUnions(returnList);
+                    returnList = executeUnions(returnList);
+                }
+                if (fieldToGroupBy != null &&
+                    table.getStructure().containsKey(fieldToGroupBy)) {
+                    return executeGrouping(returnList, fieldToGroupBy);
                 }
                 return returnList;
             } catch (IOException | ClassNotFoundException e) {
@@ -51,7 +67,27 @@ public class SelectFrom {
             }
         }
 
-        public SelectFrom union(SelectFrom selectFrom) {
+    private List<Map<String, Object>> executeGrouping(List<Map<String, Object>> toReturnAfterUnions, String fieldToGroupBy) {
+        List<Map<String, Object>> afterGrouping = new ArrayList<>();
+        Set<Object> usedValues = new HashSet<>();
+        while (!toReturnAfterUnions.isEmpty()) {
+            var valueToCompare = toReturnAfterUnions.get(0).get(fieldToGroupBy);
+            usedValues.add(valueToCompare);
+            for (var value : toReturnAfterUnions) {
+                if (value.get(fieldToGroupBy).equals(valueToCompare)) {
+                    afterGrouping.add(value);
+                }
+            }
+            //search for next nonUsed value to groupBy and removing all used values
+            while (!toReturnAfterUnions.isEmpty() &&
+                usedValues.contains(toReturnAfterUnions.get(0).get(fieldToGroupBy))) {
+                toReturnAfterUnions.remove(0);
+            }
+        }
+        return afterGrouping;
+    }
+
+    public SelectFrom union(SelectFrom selectFrom) {
             if (!selectFrom.table.getStructure().equals(table.getStructure())) {
                 throw new IllegalArgumentException("union must be used on selections with same output type");
             }
