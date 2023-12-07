@@ -9,6 +9,7 @@ import org.ord1naryman.postgresClone.operations.Insert;
 import org.ord1naryman.postgresClone.operations.Select;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -17,6 +18,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class SelectTest {
 
@@ -73,6 +75,39 @@ public class SelectTest {
             .where("name", "test1")
             .execute();
         assertEquals(List.of(Map.of("id", 1, "name", "test1")), list);
+    }
+
+    @Test
+    void whereBetweenTest() {
+        genTestData().forEach(Insert.into(table)::value);
+        List<Map<String, Object>> list = Select.from(table)
+            .whereBetween("id", 1, 2)
+            .execute();
+
+        list.forEach(o -> {
+            if ((int) o.get("id") > 2 || (int) o.get("id") < 0) {
+                fail();
+            }
+        });
+    }
+
+    @Test
+    void whereBetweenPassedValueDoesntImplementComparableTest() {
+        var table2 = new Database("test").createTable("test2", Map.of("id", TestClass.class));
+        Insert.into(table2).value(Map.of("id", new TestClass(1)));
+        Insert.into(table2).value(Map.of("id", new TestClass(2)));
+        assertThrows(IllegalArgumentException.class, () ->
+            Select.from(table2).whereBetween("id", new TestClass(1), new TestClass(2)).execute()
+        );
+        table2.deleteFile();
+    }
+
+    @Test
+    void whereBetweenIllegalFieldNameTest() {
+        genTestData().forEach(Insert.into(table)::value);
+        assertThrows(IllegalArgumentException.class, () ->
+            Select.from(table).whereBetween("FieldThatDoesntExist", 1, 2).execute()
+        );
     }
 
     @Test
@@ -192,7 +227,7 @@ public class SelectTest {
     }
 }
 
-class TestClass {
+class TestClass implements Serializable {
     int id;
 
     TestClass(int id) {
