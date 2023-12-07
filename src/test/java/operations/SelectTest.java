@@ -112,6 +112,21 @@ public class SelectTest {
         t1.deleteFile();
     }
 
+    @Test
+    void groupByTest() {
+        genTestData().forEach(Insert.into(table)::value);
+        var actual = Select.from(table).groupBy("id").execute();
+        System.out.println(actual);
+        assertEquals(actual.get(0).get("id"), actual.get(1).get("id"));
+    }
+
+    @Test
+    void groupByOnNonExistentField() {
+        genTestData().forEach(Insert.into(table)::value);
+        var actual = Select.from(table).groupBy("notExist").execute();
+        assertEquals(actual, genTestData());
+    }
+
     List<Map<String, Object>> genTestData() {
         return List.of(
             Map.of("id", 1, "name", "test1"),
