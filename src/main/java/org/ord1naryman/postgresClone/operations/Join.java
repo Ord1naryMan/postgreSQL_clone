@@ -20,7 +20,7 @@ public class Join {
      */
     public Join on(String leftField, String rightField) {
         if (dataLeft.isEmpty() || dataRight.isEmpty()) {
-            throw new IllegalArgumentException("join can't be used on empty tables een without field names");
+            throw new IllegalArgumentException("join can't be used on empty tables without field names");
         }
         if (!dataLeft.get(0).containsKey(leftField) || !dataRight.get(0).containsKey(rightField)) {
             throw new IllegalArgumentException("table must contain field with provided name");
