@@ -116,7 +116,6 @@ public class SelectTest {
     void groupByTest() {
         genTestData().forEach(Insert.into(table)::value);
         var actual = Select.from(table).groupBy("id").execute();
-        System.out.println(actual);
         assertEquals(actual.get(0).get("id"), actual.get(1).get("id"));
     }
 
@@ -139,6 +138,31 @@ public class SelectTest {
         assertEquals(testValue, actual.get(0));
     }
 
+    @Test
+    void orderByTest() {
+        genTestData().forEach(Insert.into(table)::value);
+        var actual = Select.from(table).orderBy("id").execute();
+        var expected = genTestData().stream()
+            .sorted((o1, o2) ->
+                ((Comparable) o1.get("id")).compareTo(o2.get("id"))
+            ).toList();
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void orderByWithInappropriateValueTest() {
+        genTestData().forEach(Insert.into(table)::value);
+        assertThrows(IllegalArgumentException.class, () ->
+            Select.from(table).orderBy("FIEEEEEEELD").execute()
+        );
+
+        var table2 = new Database("test").createTable("test1", Map.of("id", Integer.class, "name", TestClass.class));
+        assertThrows(IllegalArgumentException.class, () ->
+            Select.from(table2).orderBy("name").execute()
+        );
+        table2.deleteFile();
+    }
+
     List<Map<String, Object>> genTestData() {
         return List.of(
             Map.of("id", 1, "name", "test1"),
@@ -146,5 +170,15 @@ public class SelectTest {
             Map.of("id", 3, "name", "test3"),
             Map.of("id", 1, "name", "test4")
         );
+    }
+}
+
+class TestClass {
+    int id;
+    TestClass(int id) {
+        this.id = id;
+    }
+    public int getId() {
+        return id;
     }
 }
