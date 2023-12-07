@@ -35,7 +35,7 @@ public class Insert {
                 Object value = values.get(entry.getKey());
                 Class<?> expectedType = table.getStructure().get(entry.getKey());
                 if (!value.getClass().isAssignableFrom(expectedType)) {
-                    throw new IllegalArgumentException("passed key-value pair must be the same as table's content");
+                    throw new IllegalArgumentException("passed value type pair must be the same as table's content");
                 }
                 toInsert.put(entry.getKey(), values.get(entry.getKey()));
             }
