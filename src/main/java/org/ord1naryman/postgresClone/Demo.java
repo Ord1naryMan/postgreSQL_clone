@@ -10,14 +10,6 @@ import java.util.Map;
 
 public class Demo {
 
-
-    //id : int
-    // model : string
-    // type : int
-    // capacity_kg : int
-    // lifting_capacity_kg : int
-    // max_flight_range_km : int
-
     static Map<String, Class<?>> airportStructure = new HashMap<>(
         //I know that by SQL convention I should use snake case, but I don't use SQL :)
         Map.of(
