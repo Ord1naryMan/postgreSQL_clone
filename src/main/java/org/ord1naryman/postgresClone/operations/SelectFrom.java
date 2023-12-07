@@ -13,59 +13,71 @@ import java.util.Map;
 import java.util.Set;
 
 public class SelectFrom {
-        private final Table table;
-        private final Map<String, Object> whereConditions;
-        private List<SelectFrom> unionQueue;
-        private String fieldToGroupBy;
-        SelectFrom(Table table) {
-            this.table = table;
-            whereConditions = new HashMap<>();
-            unionQueue = new ArrayList<>();
-        }
+    private final Table table;
+    private final Map<String, Object> whereConditions;
+    private List<SelectFrom> unionQueue;
+    private String fieldToGroupBy;
+    private String orderByField;
 
-        public SelectFrom where(String fieldName, Object value) {
-            if (!table.getStructure().get(fieldName).isAssignableFrom(value.getClass())) {
-                throw new RuntimeException("value type must be the same as field type");
-            }
-            whereConditions.put(fieldName, value);
-            return this;
+    SelectFrom(Table table) {
+        this.table = table;
+        whereConditions = new HashMap<>();
+        unionQueue = new ArrayList<>();
+    }
+
+    public SelectFrom where(String fieldName, Object value) {
+        if (!table.getStructure().get(fieldName).isAssignableFrom(value.getClass())) {
+            throw new RuntimeException("value type must be the same as field type");
         }
+        whereConditions.put(fieldName, value);
+        return this;
+    }
 
     /**
-     *
      * @param fieldName - sets the groupBy field,
-     *                 every call to this function rewrites field to groupBy
+     *                  every call to this function rewrites field to groupBy
      */
     public SelectFrom groupBy(String fieldName) {
-            fieldToGroupBy = fieldName;
-            return this;
-        }
+        fieldToGroupBy = fieldName;
+        return this;
+    }
 
-        public List<Map<String, Object>> execute() {
-            List<Map<String, Object>> returnList = new ArrayList<>();
-            try {
-                var tableOIS = table.getObjectInputStream();
-                tableOIS.readObject(); //skip table type info
-                while (true) {
-                    Map<String, Object> object = (Map<String, Object>) tableOIS.readObject();
-                    if (isValidStructure(object)) {
-                        returnList.add(object);
-                    }
+    public List<Map<String, Object>> execute() {
+        List<Map<String, Object>> returnList = new ArrayList<>();
+        try {
+            var tableOIS = table.getObjectInputStream();
+            tableOIS.readObject(); //skip table type info
+            while (true) {
+                Map<String, Object> object = (Map<String, Object>) tableOIS.readObject();
+                if (isValidStructure(object)) {
+                    returnList.add(object);
                 }
-            } catch (EOFException e) {
-                //objectInputStream doesn't have EOF flag :(
-                if (!unionQueue.isEmpty()) {
-                    returnList = executeUnions(returnList);
-                }
-                if (fieldToGroupBy != null &&
-                    table.getStructure().containsKey(fieldToGroupBy)) {
-                    return executeGrouping(returnList, fieldToGroupBy);
-                }
-                return returnList;
-            } catch (IOException | ClassNotFoundException e) {
-                throw new RuntimeException(e);
             }
+        } catch (EOFException e) {
+            //objectInputStream doesn't have EOF flag :(
+            if (!unionQueue.isEmpty()) {
+                returnList = executeUnions(returnList);
+            }
+            if (fieldToGroupBy != null &&
+                table.getStructure().containsKey(fieldToGroupBy)) {
+                returnList = executeGrouping(returnList, fieldToGroupBy);
+            }
+            if (orderByField != null &&
+                table.getStructure().containsKey(orderByField)) {
+                return executeOrdering(returnList, orderByField);
+            }
+            return returnList;
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
         }
+    }
+
+    private List<Map<String, Object>> executeOrdering(List<Map<String, Object>> returnList, String orderByField) {
+        returnList.sort((o1, o2) ->
+            ((Comparable)o1.get(orderByField)).compareTo(o2.get(orderByField))
+        );
+        return returnList;
+    }
 
     private List<Map<String, Object>> executeGrouping(List<Map<String, Object>> toReturnAfterUnions, String fieldToGroupBy) {
         List<Map<String, Object>> afterGrouping = new ArrayList<>();
@@ -88,31 +100,43 @@ public class SelectFrom {
     }
 
     public SelectFrom union(SelectFrom selectFrom) {
-            if (!selectFrom.table.getStructure().equals(table.getStructure())) {
-                throw new IllegalArgumentException("union must be used on selections with same output type");
-            }
-            unionQueue.add(selectFrom);
-            return this;
+        if (!selectFrom.table.getStructure().equals(table.getStructure())) {
+            throw new IllegalArgumentException("union must be used on selections with same output type");
         }
-
-        public Join join(SelectFrom selectFrom) {
-            return new Join(execute(), selectFrom.execute());
-        }
-
-        private boolean isValidStructure(Map<String, Object> structure) {
-            for (var entry : whereConditions.entrySet()) {
-                if (!entry.getValue().equals(structure.get(entry.getKey()))) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        private List<Map<String, Object>> executeUnions(List<Map<String, Object>> currentList) {
-            List<Map<String, Object>> list = new ArrayList<>(currentList);
-            for (var select : unionQueue) {
-                list.addAll(select.execute());
-            }
-            return list;
-        }
+        unionQueue.add(selectFrom);
+        return this;
     }
+
+    public Join join(SelectFrom selectFrom) {
+        return new Join(execute(), selectFrom.execute());
+    }
+
+    public SelectFrom orderBy(String fieldName) {
+        var fieldClass = table.getStructure().get(fieldName);
+        if (fieldClass == null) {
+            throw new IllegalArgumentException("cannot sort using fields that doesn't exists");
+        }
+        if (!Comparable.class.isAssignableFrom(fieldClass)) {
+            throw new IllegalArgumentException("provided field's value doesn't implement Comparable");
+        }
+        orderByField = fieldName;
+        return this;
+    }
+
+    private boolean isValidStructure(Map<String, Object> structure) {
+        for (var entry : whereConditions.entrySet()) {
+            if (!entry.getValue().equals(structure.get(entry.getKey()))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private List<Map<String, Object>> executeUnions(List<Map<String, Object>> currentList) {
+        List<Map<String, Object>> list = new ArrayList<>(currentList);
+        for (var select : unionQueue) {
+            list.addAll(select.execute());
+        }
+        return list;
+    }
+}
