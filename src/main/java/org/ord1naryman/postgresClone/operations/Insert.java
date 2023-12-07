@@ -2,9 +2,7 @@ package org.ord1naryman.postgresClone.operations;
 
 import org.ord1naryman.postgresClone.model.Table;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.util.HashMap;
 import java.util.Map;
 

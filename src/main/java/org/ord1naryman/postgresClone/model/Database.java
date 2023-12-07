@@ -4,7 +4,6 @@ import org.ord1naryman.postgresClone.core.ConnectionPool;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.Map;
 
 public class Database {

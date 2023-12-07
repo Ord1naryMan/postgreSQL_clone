@@ -5,7 +5,6 @@ import org.ord1naryman.postgresClone.model.Table;
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
