@@ -163,6 +163,25 @@ public class SelectTest {
         table2.deleteFile();
     }
 
+    @Test
+    void sumByTest() {
+        genTestData().forEach(Insert.into(table)::value);
+        var actual = Select.from(table).sumBy("id");
+        assertEquals(7, actual);
+    }
+
+    @Test
+    void sumByWrongPassedValueTest() {
+        genTestData().forEach(Insert.into(table)::value);
+        assertThrows(IllegalArgumentException.class, () ->
+            Select.from(table).sumBy("notExist")
+        );
+
+        assertThrows(IllegalArgumentException.class, () ->
+            Select.from(table).sumBy("name")
+        );
+    }
+
     List<Map<String, Object>> genTestData() {
         return List.of(
             Map.of("id", 1, "name", "test1"),
@@ -175,9 +194,11 @@ public class SelectTest {
 
 class TestClass {
     int id;
+
     TestClass(int id) {
         this.id = id;
     }
+
     public int getId() {
         return id;
     }
