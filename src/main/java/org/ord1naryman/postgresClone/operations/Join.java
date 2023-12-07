@@ -28,7 +28,7 @@ public class Join {
         List<Map<String, Object>> result = new ArrayList<>();
         for (var itemLeft : dataLeft) {
             for (var itemRight : dataRight) {
-                if (itemRight.get(leftField).equals(itemLeft.get(rightField))) {
+                if (itemLeft.get(leftField).equals(itemRight.get(rightField))) {
                     var dataToAdd = new HashMap<String, Object>();
                     dataToAdd.putAll(itemRight);
                     dataToAdd.putAll(itemLeft);
