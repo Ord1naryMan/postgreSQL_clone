@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.ord1naryman.postgresClone.model.Database;
 import org.ord1naryman.postgresClone.model.Table;
 import org.ord1naryman.postgresClone.operations.Insert;
+import org.ord1naryman.postgresClone.operations.Select;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -43,6 +44,12 @@ public class InsertTests {
                 .value(Map.of("id", 1, "name", "123"))
                 .value(Map.of("id", 1))
         );
+    }
+
+    @Test
+    void insertWrongValueTypeTest() {
+        assertThrows(IllegalArgumentException.class, () ->
+            Insert.into(table).value(Map.of("id", "123", "name", "123")));
     }
 
     @Test

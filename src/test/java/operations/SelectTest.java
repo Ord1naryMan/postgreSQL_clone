@@ -127,6 +127,18 @@ public class SelectTest {
         assertEquals(actual, genTestData());
     }
 
+    @Test
+    void persistenceAfterReopeningFileTest() {
+        Map<String, Object> testValue = Map.of("id", 1, "name", "123");
+        Insert.into(table).value(testValue);
+        table.close();
+        assertThrows(IllegalArgumentException.class, () ->
+            new Database("test").createTable("test", testStructure));
+        table = new Database("test").openTable("test");
+        var actual = Select.from(table).execute();
+        assertEquals(testValue, actual.get(0));
+    }
+
     List<Map<String, Object>> genTestData() {
         return List.of(
             Map.of("id", 1, "name", "test1"),
