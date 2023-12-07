@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class SelectFrom {
     private final Table table;
@@ -39,6 +40,23 @@ public class SelectFrom {
     public SelectFrom groupBy(String fieldName) {
         fieldToGroupBy = fieldName;
         return this;
+    }
+
+    /**
+     *
+     * @return sum of values on given field after performing every union and where operation
+     */
+    public long sumBy(String fieldName) {
+        if (!table.getStructure().containsKey(fieldName)) {
+            throw new IllegalArgumentException("please provide valid field name in order to count");
+        }
+        if (!Number.class.isAssignableFrom(table.getStructure().get(fieldName))) {
+            throw new IllegalArgumentException("field should be of Number type in order to count");
+        }
+        AtomicLong count = new AtomicLong();
+        execute().stream()
+            .forEach(o -> count.addAndGet(((Number) o.get(fieldName)).longValue()));
+        return count.get();
     }
 
     public List<Map<String, Object>> execute() {
