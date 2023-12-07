@@ -11,8 +11,6 @@ SQL commands recreated with use of java classes
 - order by (more like orderUsing(Comparator))
 - union
 - join
-
-# In progress
 - group by
 
 # Data storage
@@ -26,4 +24,4 @@ to open connection is checked.
 
 # Test coverage
 <div style="color: greenyellow">100% method coverage</div>
-<div style="color: yellow">86% line coverage</div>
+<div style="color: yellow">88% line coverage</div>
